@@ -24,7 +24,11 @@ interface ResponseStructure {
  * pro 自带的错误处理， 可以在这里做自己的改动
  * @doc https://umijs.org/docs/max/request#配置
  */
-export const errorConfig: RequestConfig = {
+export const requestConfig: RequestConfig = {
+  // 基础路径，用于拼接请求地址
+  baseURL: 'http://localhost:8492',
+  // 是否携带 cookie
+  withCredentials: true,
   // 错误处理： umi@3 的错误处理方案。
   errorConfig: {
     // 错误抛出

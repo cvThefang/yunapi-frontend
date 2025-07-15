@@ -11,6 +11,7 @@ import React from 'react';
 import { flushSync } from 'react-dom';
 import { outLogin } from '@/services/ant-design-pro/api';
 import HeaderDropdown from '../HeaderDropdown';
+import {userLogoutUsingPost} from "@/services/yunapi-backend/userController";
 
 export type GlobalHeaderRightProps = {
   menu?: boolean;
@@ -75,7 +76,7 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({
       flushSync(() => {
         setInitialState((s) => ({ ...s, currentUser: undefined }));
       });
-      loginOut();
+      userLogoutUsingPost();
       return;
     }
     history.push(`/account/${key}`);

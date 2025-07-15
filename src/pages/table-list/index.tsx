@@ -1,16 +1,19 @@
-import { removeRule, rule } from '@/services/ant-design-pro/api';
-import type { ActionType, ProColumns, ProDescriptionsItemProps } from '@ant-design/pro-components';
+import {removeRule, rule} from '@/services/ant-design-pro/api';
+import type {ActionType, ProColumns, ProDescriptionsItemProps} from '@ant-design/pro-components';
 import {
   FooterToolbar,
   PageContainer,
   ProDescriptions,
   ProTable,
 } from '@ant-design/pro-components';
-import { useRequest } from '@umijs/max';
-import { Button, Drawer, Input, message } from 'antd';
-import React, { useCallback, useRef, useState } from 'react';
+import {useRequest} from '@umijs/max';
+import {Button, Drawer, Input, message} from 'antd';
+import React, {useCallback, useRef, useState} from 'react';
 import CreateForm from './components/CreateForm';
 import UpdateForm from './components/UpdateForm';
+import {listInterfaceInfoByPageUsingGet} from "@/services/yunapi-backend/interfaceInfoController";
+import type {SortOrder} from "antd/lib/table/interface";
+
 const TableList: React.FC = () => {
   const actionRef = useRef<ActionType | null>(null);
   const [showDetail, setShowDetail] = useState<boolean>(false);
@@ -23,7 +26,7 @@ const TableList: React.FC = () => {
    * */
 
   const [messageApi, contextHolder] = message.useMessage();
-  const { run: delRun, loading } = useRequest(removeRule, {
+  const {run: delRun, loading} = useRequest(removeRule, {
     manual: true,
     onSuccess: () => {
       setSelectedRows([]);
@@ -34,34 +37,41 @@ const TableList: React.FC = () => {
       messageApi.error('Delete failed, please try again');
     },
   });
-  const columns: ProColumns<API.RuleListItem>[] = [
+  const columns: ProColumns<API.InterfaceInfo>[] = [
     {
-      title: '规则名称',
-      dataIndex: 'name',
-      render: (dom, entity) => {
-        return (
-          <a
-            onClick={() => {
-              setCurrentRow(entity);
-              setShowDetail(true);
-            }}
-          >
-            {dom}
-          </a>
-        );
-      },
+      title: 'id',
+      dataIndex: 'id',
+      valueType: 'index',
     },
     {
-      title: '描述',
-      dataIndex: 'desc',
+      title: '接口名称',
+      dataIndex: 'name',
+      valueType: 'text',
+    },
+    {
+      title: '接口描述',
+      dataIndex: 'description',
       valueType: 'textarea',
     },
     {
-      title: '服务调用次数',
-      dataIndex: 'callNo',
-      sorter: true,
-      hideInForm: true,
-      renderText: (val: string) => `${val}${'万'}`,
+      title: '请求方法',
+      dataIndex: 'method',
+      valueType: 'text',
+    },
+    {
+      title: '请求头',
+      dataIndex: 'requestHeader',
+      valueType: 'textarea',
+    },
+    {
+      title: '响应头',
+      dataIndex: 'responseHeader',
+      valueType: 'textarea',
+    },
+    {
+      title: '接口地址',
+      dataIndex: 'url',
+      valueType: 'text',
     },
     {
       title: '状态',
@@ -73,35 +83,22 @@ const TableList: React.FC = () => {
           status: 'Default',
         },
         1: {
-          text: '运行中',
+          text: '开启',
           status: 'Processing',
-        },
-        2: {
-          text: '已上线',
-          status: 'Success',
-        },
-        3: {
-          text: '异常',
-          status: 'Error',
         },
       },
     },
     {
-      title: '上次调度时间',
-      sorter: true,
-      dataIndex: 'updatedAt',
+      title: '创建时间',
+      dataIndex: 'createTime',
       valueType: 'dateTime',
-      renderFormItem: (item, { defaultRender, ...rest }, form) => {
-        const status = form.getFieldValue('status');
-        if (`${status}` === '0') {
-          return false;
-        }
-        if (`${status}` === '3') {
-          return <Input {...rest} placeholder={'请输入异常原因！'} />;
-        }
-        return defaultRender(item);
-      },
     },
+    {
+      title: '更新时间',
+      dataIndex: 'updateTime',
+      valueType: 'dateTime',
+    },
+
     {
       title: '操作',
       dataIndex: 'option',
@@ -150,8 +147,19 @@ const TableList: React.FC = () => {
         search={{
           labelWidth: 120,
         }}
-        toolBarRender={() => [<CreateForm key="create" reload={actionRef.current?.reload} />]}
-        request={rule}
+        toolBarRender={() => [<CreateForm key="create" reload={actionRef.current?.reload}/>]}
+        request={async (params: {}, sort: Record<string, SortOrder>, filter: Record<string, (string | number)[] | null>) => {
+          const res = await listInterfaceInfoByPageUsingGet({
+            ...params,
+          })
+          if (res.data) {
+            return {
+              data: res?.data.records || [],
+              success: true,
+              total: res?.total || 0,
+            }
+          }
+        }}
         columns={columns}
         rowSelection={{
           onChange: (_, selectedRows) => {
