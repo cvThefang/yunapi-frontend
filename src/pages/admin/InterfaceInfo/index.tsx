@@ -10,11 +10,15 @@ import {Button, Drawer, message} from 'antd';
 import React, {useRef, useState} from 'react';
 import type {SortOrder} from "antd/lib/table/interface";
 import {
-  addInterfaceInfoUsingPost, deleteInterfaceInfoUsingPost,
-  listInterfaceInfoByPageUsingGet, updateInterfaceInfoUsingPost
+  addInterfaceInfoUsingPost,
+  deleteInterfaceInfoUsingPost,
+  listInterfaceInfoByPageUsingGet,
+  offlineInterfaceInfoUsingPost,
+  onlineInterfaceInfoUsingPost,
+  updateInterfaceInfoUsingPost
 } from "@/services/yunapi-backend/interfaceInfoController";
-import CreateModal from "@/pages/InterfaceInfo/components/CreateModal";
-import UpdateModal from "@/pages/InterfaceInfo/components/UpdateModal";
+import CreateModal from "@/pages/admin/InterfaceInfo/components/CreateModal";
+import UpdateModal from "@/pages/admin/InterfaceInfo/components/UpdateModal";
 
 const TableList: React.FC = () => {
   /**
@@ -106,6 +110,57 @@ const TableList: React.FC = () => {
     }
   };
 
+  /**
+   *  发布
+   *
+   * @param selectedRows
+   */
+  const handleOnline = async (selectedRows: API.IdRequest) => {
+    const hide = message.loading('正在发布...');
+    console.log(selectedRows)
+    if (!selectedRows) return true;
+    try {
+      await onlineInterfaceInfoUsingPost({
+        id: selectedRows.id
+      })
+      hide();
+      message.success('操作成功');
+      // actionRef能够拿到ProTable的控制权，刷新表格数据
+      actionRef.current?.reload();
+      return true;
+    } catch (error: any) {
+      hide();
+      message.error('操作失败' + error.message);
+      return false;
+    }
+  };
+
+  /**
+   *  下线
+   *
+   * @param selectedRows
+   */
+  const handleOffline = async (selectedRows: API.IdRequest) => {
+    const hide = message.loading('正在下线...');
+    console.log(selectedRows)
+    if (!selectedRows) return true;
+    try {
+      await offlineInterfaceInfoUsingPost({
+        id: selectedRows.id
+      })
+      hide();
+      message.success('操作成功');
+      // actionRef能够拿到ProTable的控制权，刷新表格数据
+      actionRef.current?.reload();
+      return true;
+    } catch (error: any) {
+      hide();
+      message.error('操作失败' + error.message);
+      return false;
+    }
+  };
+
+  // 注意：columns中valueType为index时不会被传递
   const columns: ProColumns<API.InterfaceInfo>[] = [
     {
       title: 'id',
@@ -126,18 +181,8 @@ const TableList: React.FC = () => {
     },
     {
       title: '描述',
-      dataIndex: 'descrpition',
+      dataIndex: 'description',
       valueType: 'textarea',
-    },
-    {
-      title: '请求头',
-      dataIndex: 'requestHeader',
-      valueType: 'textarea',
-    },
-    {
-      title: '接口地址',
-      dataIndex: 'url',
-      valueType: 'text',
     },
     {
       title: '接口类型',
@@ -145,9 +190,24 @@ const TableList: React.FC = () => {
       valueType: 'text',
     },
     {
+      title: '接口地址',
+      dataIndex: 'url',
+      valueType: 'text',
+    },
+    {
+      title: '请求参数',
+      dataIndex: 'requestParams',
+      valueType: 'jsonCode',
+    },
+    {
+      title: '请求头',
+      dataIndex: 'requestHeader',
+      valueType: 'jsonCode',
+    },
+    {
       title: '响应头',
-      dataIndex: 'responeHeader',
-      valueType: 'textarea',
+      dataIndex: 'responseHeader',
+      valueType: 'jsonCode',
     },
     {
       title: '使用次数',
@@ -193,9 +253,17 @@ const TableList: React.FC = () => {
         >
           编辑
         </a>,
-        <a onClick={() => handleRemove(record)} key="subscribeAlert">
+        record.status === 0 ?
+          <a key="online" onClick={() => handleOnline(record)}>
+            发布
+          </a> : null,
+        record.status === 1 ?
+          <Button key="offline" type="text" danger onClick={() => handleOffline(record)}>
+            下线
+          </Button> : null,
+        <Button type="text" danger onClick={() => handleRemove(record)} key="subscribeAlert">
           删除
-        </a>,
+        </Button>,
       ],
     },
   ];
